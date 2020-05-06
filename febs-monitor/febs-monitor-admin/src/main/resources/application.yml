@@ -1,0 +1,14 @@
+server:
+  port: 8106
+
+spring:
+  application:
+    name: FEBS-Monitor-Admin
+  boot:
+    admin:
+      ui:
+        title: ${spring.application.name}
+  security:
+    user:
+      name: root
+      password: 123456

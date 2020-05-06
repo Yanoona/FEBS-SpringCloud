@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: FEBS-Server-Test
+  security:
+    user:
+      name: febs
+      password: 123456
+  #防止启动的时候将抛出异常：Failed to configure a DataSource: 'url' attribute is not specified and no embedded datasource
+  #could be configured.
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,com.baomidou.dynamic.datasource.spring.boot.autoconfigure.DynamicDataSourceAutoConfiguration
+  boot:
+    admin:
+      client:
+        url: http://localhost:8106
+        username: root
+        password: 123456
+
+eureka:
+  instance:
+    #向Eureka 服务端发送心跳的间隔时间，单位为秒，用于服务续约。
+    lease-renewal-interval-in-seconds: 20
+    hostname: localhost
+  client:
+    #为true时表示将当前服务注册到Eureak服务端
+    register-with-eureka: true
+    #为true时表示从Eureka 服务端获取注册的服务信息
+    fetch-registry: true
+    #新实例信息的变化到Eureka服务端的间隔时间，单位为秒
+    instance-info-replication-interval-seconds: 30
+    serviceUrl:
+      defaultZone: http://${spring.security.user.name}:${spring.security.user.password}@${eureka.instance.hostname}:8101/register/eureka/
+
+server:
+  port: 8105
+
+security:
+  oauth2:
+    resource:
+      id: ${spring.application.name}
+      #user-info-uri路径为http://localhost:8103/auth/user，通过微服务网关
+      user-info-uri: http://${eureka.instance.hostname}:8103/auth/user
+
+#开启feign回退
+feign:
+  hystrix:
+    enabled: true
+
+#把SecurityContext对象从当前主线程传输到Hystrix线程
+hystrix:
+  shareSecurityContext: true
+
+#SpringBootAdmin客户端的信息
+info:
+  app:
+    name: ${spring.application.name}
+    description: "@project.description@"
+    version: "@project.version@"
+management:
+  #将客户端的所有监控端点都暴露给SBA服务端
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  #将客户端的健康信息总是显示
+  endpoint:
+    health:
+      show-details: always

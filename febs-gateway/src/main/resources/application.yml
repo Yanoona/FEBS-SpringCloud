@@ -1,0 +1,85 @@
+server:
+  port: 8103
+
+spring:
+  application:
+    name: FEBS-Gateway
+  security:
+    user:
+      name: febs
+      password: 123456
+  #防止启动的时候将抛出异常：Failed to configure a DataSource: 'url' attribute is not specified and no embedded datasource
+  #could be configured.
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  boot:
+    admin:
+      client:
+        url: http://localhost:8106
+        username: root
+        password: 123456
+eureka:
+  instance:
+    #向Eureka 服务端发送心跳的间隔时间，单位为秒，用于服务续约。
+    lease-renewal-interval-in-seconds: 20
+    hostname: localhost
+  client:
+    #为true时表示将当前服务注册到Eureak服务端
+    register-with-eureka: true
+    #为true时表示从Eureka 服务端获取注册的服务信息
+    fetch-registry: true
+    #新实例信息的变化到Eureka服务端的间隔时间，单位为秒
+    instance-info-replication-interval-seconds: 30
+    #默认值为30秒，即每30秒去Eureka服务端上获取服务并缓存，这里指定为3秒的原因是方便开发时测试，实际可以指定为默认值即可；
+    registry-fetch-interval-seconds: 3
+    serviceUrl:
+      defaultZone: http://${spring.security.user.name}:${spring.security.user.password}@${eureka.instance.hostname}:8101/register/eureka/
+
+zuul:
+  SendErrorFilter:
+    error:
+      disable: false
+  routes:
+    auth:
+      #所有以/auth开头的请求都会被转发到名称为FEBS-Auth的服务上
+      path: /auth/**
+      serviceId: FEBS-Auth
+      #由于我们需要在请求头中携带令牌，所以sensitiveHeaders设置为*，表示不过滤请求头信息，即请求的请求头信息将原封不动的转发出去。
+      sensitiveHeaders: "*"
+    system:
+      path: /system/**
+      serviceId: FEBS-Server-System
+      sensitiveHeaders: "*"
+    test:
+      path: /test/**
+      serviceId: FEBS-Server-Test
+      sensitiveHeaders: "*"
+
+  #设置为true时，表示开启重试机制；
+  retryable: true
+  #表示关闭所有默认路由配置规则
+  ignored-services: "*"
+  ribbon:
+    #设置为true的时候表示开启Ribbon的饥饿加载模式，即在应用启动的时候就去获取相应的Client备用
+    eager-load:
+      enabled: true
+
+ribbon:
+  ReadTimeOut: 3000
+
+#SpringBootAdmin客户端的信息
+info:
+  app:
+    name: ${spring.application.name}
+    description: "@project.description@"
+    version: "@project.version@"
+management:
+  #将客户端的所有监控端点都暴露给SBA服务端
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  #将客户端的健康信息总是显示
+  endpoint:
+    health:
+      show-details: always
